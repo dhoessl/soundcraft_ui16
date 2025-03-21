@@ -11,6 +11,12 @@ Splitting the Sender and Mixer helps to receive the messages for the options cha
 
 Furthermore you might set values on one device and get/display information on another device.
 
+# Install
+
+```
+pip install -U git+https://github.com/dhoessl/soundcraft_ui16
+```
+
 # Examples
  * will be added later, when the full project is completed
 
