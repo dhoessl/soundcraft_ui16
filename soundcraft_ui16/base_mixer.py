@@ -4,7 +4,11 @@ from time import sleep
 
 
 class BaseMixer:
-    def __init__(self, ip: str, port: int, connection_timeout: int = 20) -> None:
+    def __init__(
+            self, ip: str,
+            port: int,
+            connection_timeout: int = 20
+    ) -> None:
         self.ip = ip,
         self.port = port
         self.connection_timeout = connection_timeout
@@ -41,7 +45,7 @@ class BaseMixer:
                     print(f"Unexpected OSError: {oserr.errno}")
                     print("Error appeared while connecting to Mixer")
             except Exception as ex:
-                print(f"Unexpected error: {ex.errno}")
+                print(f"Unexpected error: {ex}")
 
     def keep_alive_thread(self) -> None:
         ''' Thread '''
