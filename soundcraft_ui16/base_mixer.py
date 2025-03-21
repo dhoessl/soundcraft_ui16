@@ -9,7 +9,7 @@ class BaseMixer:
             port: int,
             connection_timeout: int = 20
     ) -> None:
-        self.ip = ip,
+        self.ip = ip
         self.port = port
         self.connection_timeout = connection_timeout
 
@@ -78,6 +78,6 @@ class BaseMixer:
             if self.connected:
                 print('Disconnected from SoundCraft gracefully.')
             self.connected = False
-        except Exception as ex:  # noqa: E722
+        except Exception as ex:
             print("Abnormal termination")
             print(f"Execption: {ex}")
