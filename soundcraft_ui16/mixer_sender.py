@@ -48,7 +48,7 @@ class MixerSender(BaseMixer):
     def fx(self, channel, value, kind, index) -> None:
         self.send_packet(f'SETD^{kind}.{channel}.fx.{index}.value^{value}\n')
 
-    def fx_mute(self, input, value, datatype, fx_index -> None):
+    def fx_mute(self, input, value, datatype, fx_index) -> None:
         self.send_packet(
             f'SETD^{datatype}.{input}.fx.{fx_index}.mute^{value}\n'
         )
