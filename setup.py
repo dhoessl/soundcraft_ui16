@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='soundcraft_ui16',
-    version='0.1.1-1',
+    version='0.1.1-2',
     description='library to manage receiving and sending data to \
             Soundcraft Ui16 Mixer',
     url='https://github.com/dhoessl/soundcraft_ui16',
