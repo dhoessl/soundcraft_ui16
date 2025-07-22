@@ -4,8 +4,13 @@ from threading import Thread
 
 
 class MixerListener(BaseMixer):
-    def __init__(self, ip: str, port: int, queue: Queue, connection_timeout: int = 20) -> None:
-        super().__init__(ip, port)
+    def __init__(
+            self, ip: str, port: int,
+            queue: Queue,
+            connection_timeout: int = 20,
+            logger_name: str = "MixerListener"
+    ) -> None:
+        super().__init__(ip, port, logger_name=logger_name)
         # Add a queue to share received messages
         self.queue = queue
         self.recv_thread = Thread(
@@ -13,7 +18,7 @@ class MixerListener(BaseMixer):
             args=()
         )
 
-    def start(self):
+    def start(self) -> None:
         """ Try to connect to mixer.
             Starts the keep_alive and receiver Threads
         """
@@ -22,10 +27,12 @@ class MixerListener(BaseMixer):
             self.alive_thread.start()
             self.recv_thread.start()
         else:
-            print("ERROR: Listener could not connect to Mixer.")
+            self.logger.critical(
+                "Listener could not connect to Mixer. Exiting Listener!"
+            )
             exit(1)
 
-    def receive_thread(self):
+    def receive_thread(self) -> None:
         ''' Receiving Thread
             Listen for messages from Soundcraft Ui16.
             Format them and put them in the message queue `queue`
@@ -37,9 +44,9 @@ class MixerListener(BaseMixer):
             if "\n" not in buffer:
                 # If no message delimiter is found wait for new messages
                 continue
-            # split buffer on delimiter into pars
+            # split buffer on delimiter into parts
             parts = buffer.split("\n")
-            # Save everything execpt last unfinished element
+            # Save everything except last unfinished element
             data = parts[0:len(parts)-1]
             # set unfinished back in buffer
             buffer = parts[len(parts)-1]
@@ -47,7 +54,7 @@ class MixerListener(BaseMixer):
                 if "SETD" in message:
                     self.queue.put(self._format_setd_message(message))
 
-    def _format_setd_message(self, message):
+    def _format_setd_message(self, message) -> dict:
         ''' Format a received SETD message into dict from string '''
         _, body, value = message.split('^')
         body_list = body.split('.')
