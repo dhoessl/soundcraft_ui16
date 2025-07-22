@@ -47,12 +47,21 @@ class BaseMixer:
                             f"Unable to reach {self.ip}"
                         )
                     connect_count += 1
-                    sleep(1)
+                elif oserr.errno == 101:
+                    self.logger.critical(
+                        f"Network of {self.ip} is not reachable"
+                    )
+                    exit(1)
+                elif oserr.errno == 103:
+                    self.logger.error(
+                        f"Connection to {self.ip} aborted. Retry"
+                    )
                 else:
                     self.logger.error(
-                        f"Unexpected OSError => {oserr.errno}"
+                        f"Unexpected OSError => {oserr.errno}\n\t"
                         "Error appeared while connecting to Mixer"
                     )
+                sleep(1)
             except Exception as ex:
                 self.logger.error(f"Unexpected error: {ex}")
 
