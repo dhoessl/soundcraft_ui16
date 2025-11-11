@@ -1,37 +1,22 @@
 from .base_mixer import BaseMixer
-from threading import Thread
 
 
 class MixerSender(BaseMixer):
     def __init__(
-            self, ip: str, port: int,
-            connection_timeout: int = 20,
-            logger_name: str = "MixerSender"
+        self, ip: str, port: int,
+        connection_timeout: int = 20
     ) -> None:
-        super().__init__(
-            ip, port,
-            connection_timeout=connection_timeout,
-            logger_name=logger_name
-        )
-        self.recv_thread = Thread(
-            target=self.sink_thread,
-            args=()
-        )
-
-    def start(self) -> None:
+        super().__init__(ip, port, connection_timeout=connection_timeout)
         self.connect()
-        if self.connected:
-            self.alive_thread.start()
-            self.recv_thread.start()
-        else:
-            self.logger.critical(
-                "Sender could not connect to Mixer. Exiting Sender!"
-            )
+        self.alive_thread.join()
+        self.receiving_thread.join()
 
-    def sink_thread(self) -> None:
-        """ Thread to listen and discard messages
-            This is required to keep the keepalive thread working
-        """
+    def receiving_thread(self) -> None:
+        ''' Sink Thread '''
+        # We need to listen to the Connection to keep
+        # the alive ping thread connected
+        # But as this is the sender we do not need to keep track
+        # of the messages
         while not self.exit.is_set():
             _ = self.client.recv(2048).decode()
 

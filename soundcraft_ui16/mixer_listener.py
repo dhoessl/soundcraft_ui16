@@ -1,38 +1,44 @@
 from .base_mixer import BaseMixer
+
+import paho.mqtt.client as mqtt
 from queue import Queue
-from threading import Thread
+from os import path
+
+
+class MqttSender():
+    def __init__(
+        self, host: str = "localhost", port: int = 1883,
+        queue: str = "config"
+    ) -> None:
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        self.client.connect(host, port)
+        self.queue = queue
+
+    def send_message(self, topic: str, message: str | int | float) -> None:
+        self.client.publish(path.join(self.queue, topic), message)
 
 
 class MixerListener(BaseMixer):
     def __init__(
-            self, ip: str, port: int,
-            queue: Queue,
-            connection_timeout: int = 20,
-            logger_name: str = "MixerListener"
+        self, ip: str, port: int,
+        queue: Queue = None,
+        connection_timeout: int = 20,
+        mqtt_queue: str = None,
+        mqtt_host: str = "localhost",
+        mqtt_port: int = 1883
     ) -> None:
-        super().__init__(ip, port, logger_name=logger_name)
+        super().__init__(ip, port)
         # Add a queue to share received messages
         self.queue = queue
-        self.recv_thread = Thread(
-            target=self.receive_thread,
-            args=()
-        )
-
-    def start(self) -> None:
-        """ Try to connect to mixer.
-            Starts the keep_alive and receiver Threads
-        """
+        self.mqtt_client = None
+        if mqtt_queue:
+            self.mqtt_client = MqttSender(mqtt_host, mqtt_port, mqtt_queue)
+        self._check_delivery()
         self.connect()
-        if self.connected:
-            self.alive_thread.start()
-            self.recv_thread.start()
-        else:
-            self.logger.critical(
-                "Listener could not connect to Mixer. Exiting Listener!"
-            )
-            exit(1)
+        self.alive_thread.join()
+        self.recv_thread.join()
 
-    def receive_thread(self) -> None:
+    def receiving_thread(self):
         ''' Receiving Thread
             Listen for messages from Soundcraft Ui16.
             Format them and put them in the message queue `queue`
@@ -51,8 +57,21 @@ class MixerListener(BaseMixer):
             # set unfinished back in buffer
             buffer = parts[len(parts)-1]
             for message in data:
-                if "SETD" in message:
+                if "SETD" not in message:
+                    continue
+                if self.queue:
                     self.queue.put(self._format_setd_message(message))
+                if self.mqtt_client:
+                    topic, message = self._format_mqtt_message(message)
+                    self.mqtt_client.send_message(topic, message)
+
+    def _format_mqtt_message(self, message):
+        """ Format a received SETD message into a topic and message for mqtt
+            publishing
+        """
+        _, body, value = message.split("^")
+        body_list = body.split(".")
+        return ("/".join(body_list), value)
 
     def _format_setd_message(self, message) -> dict:
         ''' Format a received SETD message into dict from string '''
@@ -82,3 +101,11 @@ class MixerListener(BaseMixer):
         output["kind"] = body_list[0]
         output["value"] = value
         return output
+
+    def _check_delivery(self) -> None:
+        """ Checks if a valid delivery Method is set """
+        if not self.queue and not self.mqtt_client:
+            raise RuntimeError(
+                "No delivery method was set. "
+                "Please make sure to set a Queue and/or mqtt_queue"
+            )

@@ -6,15 +6,13 @@ from logging import getLogger, INFO
 
 class BaseMixer:
     def __init__(
-            self, ip: str,
-            port: int,
-            connection_timeout: int = 20,
-            logger_name: str = "BaseMixer"
+        self, ip: str, port: int,
+        connection_timeout: int = 20
     ) -> None:
         self.ip = ip
         self.port = port
         self.connection_timeout = connection_timeout
-        self.logger = getLogger(logger_name)
+        self.logger = getLogger()
         if self.logger.level < 20:
             self.logger.setLevel(INFO)
 
@@ -64,6 +62,12 @@ class BaseMixer:
                 sleep(1)
             except Exception as ex:
                 self.logger.error(f"Unexpected error: {ex}")
+        self.alive_thread.start()
+        self.recv_thread = Thread(
+            target=self.receiving_thread,
+            args=()
+        )
+        self.recv_thread.start()
 
     def keep_alive_thread(self) -> None:
         ''' Thread '''
